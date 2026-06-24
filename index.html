@@ -760,6 +760,12 @@ td,th{font-variant-numeric:tabular-nums;}
 .dvm-prev-val{font-size:11px;font-weight:600;color:var(--text-secondary);font-variant-numeric:tabular-nums;white-space:nowrap;}
 .tc.maximized #dvd-grid{grid-template-columns:repeat(auto-fill,minmax(232px,1fr));}
 .tc.maximized .dvm-value{font-size:30px;}
+/* arrange (admin drag-reorder) mode */
+#dvd-grid.arrange-on .dvm-card{cursor:grab;border:2px dashed var(--accent-dark);box-shadow:none;}
+#dvd-grid.arrange-on .dvm-card:hover{transform:none;box-shadow:none;}
+#dvd-grid.arrange-on .dvm-card::before{display:none;}
+#dvd-grid.arrange-on .dvm-card:active{cursor:grabbing;}
+.dvm-card.dragging{opacity:.35;}
 </style>
 </head>
 <body>
@@ -879,7 +885,7 @@ td,th{font-variant-numeric:tabular-nums;}
     <span class="ctrl-label">To</span><input type="date" id="d-to"/>
     <button class="btn" id="btn-load" onclick="loadData()">⟳ Refresh</button>
     <button class="btn btn-sec" onclick="clearF()">✕ Clear</button>
-    <button class="btn btn-sec" onclick="toggleDebug()">🔍 Debug</button>
+    <button class="btn btn-sec" id="debug-btn" onclick="toggleDebug()" style="display:none;">🔍 Debug</button>
     <button class="btn btn-sec" id="edit-mode-btn" onclick="toggleEditMode()" style="display:none;">✏️ Edit Cards</button>
   </div>
 
@@ -961,9 +967,9 @@ td,th{font-variant-numeric:tabular-nums;}
         <table id="d-table" style="width:100%;font-size:11px;"></table>
       </div>
     </div>
-    <div class="tc" style="margin-top:14px;"><div class="tt">🔁 Day vs Previous Day <span id="dvd-dates" style="font-size:11px;color:var(--muted);font-weight:400;margin-left:8px;"></span></div><div class="dvd-grid" id="dvd-grid"></div></div>
-    <div class="tc" id="ga-section" style="margin-top:14px;display:none;"><div class="tt" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;"><span>🏢 General & Administrative Expenses</span><span id="ga-total" style="font-size:14px;color:#E53E3E;font-weight:700;"></span></div><div style="overflow-x:auto"><table><thead><tr><th style="width:40px;"></th><th>Category</th><th>Daily Avg (SAR)</th><th>Period Total (SAR)</th><th>% of Total G&A</th></tr></thead><tbody id="ga-tbody"></tbody><tfoot id="ga-tfoot"></tfoot></table></div></div>
-    <div class="tc" id="ebitda-section" style="margin-top:14px;display:none;"><div class="tt" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;"><span>📈 EBITDA Summary</span><div style="display:flex;gap:16px;"><div style="text-align:right;"><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">EBITDA</div><div id="ebitda-val" style="font-size:20px;font-weight:800;"></div></div><div style="text-align:right;"><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">EBITDA %</div><div id="ebitda-pct" style="font-size:20px;font-weight:800;"></div></div></div></div><div style="overflow-x:auto;margin-top:14px;"><table><thead><tr><th>Component</th><th>Formula</th><th>Daily Avg</th><th>Period Total</th></tr></thead><tbody id="ebitda-tbody"></tbody></table></div></div>
+    <div class="tc" style="margin-top:14px;"><div class="tt">🔁 Day vs Previous Day <span id="dvd-dates" style="font-size:11px;color:var(--muted);font-weight:400;margin-left:8px;"></span><button id="dvd-arrange-btn" onclick="event.stopPropagation();toggleDvdArrange();" style="display:none;margin-left:12px;background:var(--accent-light);color:var(--accent-dark);border:1px solid rgba(122,184,0,.3);padding:4px 12px;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Inter Tight',sans-serif;vertical-align:middle;">⠿ Arrange</button><button id="dvd-reset-btn" onclick="event.stopPropagation();resetDvdOrder();" style="display:none;margin-left:6px;background:#F8F9FA;color:var(--muted);border:1px solid var(--border);padding:4px 10px;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Inter Tight',sans-serif;vertical-align:middle;">↺ Reset</button></div><div class="dvd-grid" id="dvd-grid"></div></div>
+    <div class="tc" id="ga-section" style="margin-top:14px;display:none;"><div class="tt" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;"><span>🏢 General & Administrative Expenses</span><span id="ga-total" style="font-size:14px;color:#E53E3E;font-weight:700;"></span></div><div style="overflow-x:auto;"><table style="font-size:11px;"><thead id="ga-thead"></thead><tbody id="ga-tbody"></tbody><tfoot id="ga-tfoot"></tfoot></table></div></div>
+    <div class="tc" id="ebitda-section" style="margin-top:14px;display:none;"><div class="tt" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;"><span>📈 EBITDA Summary</span><div style="display:flex;gap:16px;"><div style="text-align:right;"><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">EBITDA</div><div id="ebitda-val" style="font-size:20px;font-weight:800;"></div></div><div style="text-align:right;"><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">EBITDA %</div><div id="ebitda-pct" style="font-size:20px;font-weight:800;"></div></div></div></div><div style="overflow-x:auto;margin-top:14px;"><table style="font-size:11px;"><thead id="ebitda-thead"></thead><tbody id="ebitda-tbody"></tbody></table></div></div>
   </div>
 
   <!-- USERS TAB -->
@@ -1155,10 +1161,11 @@ function onLoginSuccess(){
   document.getElementById('chgpw-btn').style.display='inline-block';
   const tn = document.getElementById('tab-nav'); if(tn) tn.style.display='flex';
   if(currentRole==='admin'){ const b=document.getElementById('tab-users-btn'); if(b) b.style.display='inline-block'; }
-  document.getElementById('edit-mode-btn').style.display='inline-block';
   switchTab('dashboard');
   if(currentRole==='admin'){
     document.getElementById('admin-toggle').style.display='inline-block';
+    document.getElementById('edit-mode-btn').style.display='inline-block';
+    document.getElementById('debug-btn').style.display='inline-block';
   }
   loadData();
 }
@@ -1177,6 +1184,7 @@ function logout(){
   const _ubtn = document.getElementById('tab-users-btn');
   if(_ubtn) _ubtn.style.display='none';
   document.getElementById('edit-mode-btn').style.display='none';
+  document.getElementById('debug-btn').style.display='none';
   if(isEditMode) toggleEditMode();
   switchTab('dashboard');
   document.getElementById('tab-users-btn').style.display='none';
@@ -2105,18 +2113,22 @@ function renderDayVsDay(dates){
     {l:'CPO',               k:'CPO',                          fmt:(v)=>fSAR(v),      isSAR:true},
     {l:'Order Value',       k:'Order_value exc VAT',           fmt:(v)=>fSAR(v),      isSAR:true},
     {l:'Total Cost',        k:'Total_cost Exc VAT',           fmt:(v)=>fSAR(v),      isSAR:true},
-    {l:'Co.Margin',         k:'Co.Margin',                    fmt:(v)=>fSAR(v),      isSAR:true},
     {l:'Front Margin',      k:'Front Margin/Markup',          fmt:(v)=>fSAR(v),      isSAR:true},
     {l:'Delivery Fees',     k:'delivery_fees_ExecludeVAT',     fmt:(v)=>fSAR(v),      isSAR:true},
-    {l:'Promo Orders',      k:'Order Amount with promotion',         fmt:(v)=>fmt(v,0),     isSAR:false},
-    {l:'Non-Promo Orders',  k:'Order Amount with out promotion',    fmt:(v)=>fmt(v,0),     isSAR:false},
     {l:'Front Margin %',    k:'Front Margin / Tot sales exc VAT', fmt:(v)=>fmt(v,2)+'%', isSAR:false},
     {l:'Co.Margin %',       k:'Co Margin / Tot sales',        fmt:(v)=>fmt(v,2)+'%', isSAR:false},
-    {l:'COGS %',            k:'COGS/ Tot sales exc VAT',      fmt:(v)=>fmt(v,2)+'%', isSAR:false},
     {l:'CPO/AOV %',         k:'CPO/ AOV',                     fmt:(v)=>fmt(v,2)+'%', isSAR:false},
-    {l:'Promo % of Sales',  k:'% from total sales',           fmt:(v)=>fmt(v,2)+'%', isSAR:false},
     {l:'AOV Needed',        k:'AOV needed to cover CPO',      fmt:(v)=>fSAR(v),      isSAR:true},
   ];
+
+  // admin arrange button visibility + apply saved custom order
+  const _ab=document.getElementById('dvd-arrange-btn');
+  const _rb=document.getElementById('dvd-reset-btn');
+  const _isAdmin=(currentRole==='admin');
+  if(_ab) _ab.style.display=_isAdmin?'inline-flex':'none';
+  if(_rb) _rb.style.display=(_isAdmin&&getDvdOrder().length)?'inline-flex':'none';
+  const _ord=getDvdOrder();
+  if(_ord.length){ metrics.sort((a,b)=>{let ia=_ord.indexOf(a.l),ib=_ord.indexOf(b.l);if(ia<0)ia=999;if(ib<0)ib=999;return ia-ib;}); }
 
   document.getElementById('dvd-grid').innerHTML=metrics.map(m=>{
     const r=getRow(m.k);
@@ -2134,7 +2146,7 @@ function renderDayVsDay(dates){
     const accent = cls==='good'?'#7AB800':cls==='bad'?'#E53E3E':'#CBD5C0';
     const arrow = delta==null?'—':(up?'▲':down?'▼':'•');
     const pctStr = (delta!=null&&pct!=null)?Math.abs(pct).toFixed(1)+'%':'';
-    return `<div class="dvm-card" style="--accent:${accent};--cc:${accent}">
+    return `<div class="dvm-card" data-metric="${m.l}" draggable="${dvdArrange}" style="--accent:${accent};--cc:${accent}">
       <div class="dvm-top">
         <span class="dvm-label">${m.l}</span>
         <span class="dvm-pill ${cls}">${arrow} ${pctStr}</span>
@@ -2147,6 +2159,55 @@ function renderDayVsDay(dates){
     </div>`;
   }).join('');
 }
+
+// ── DAY-VS-DAY: admin drag-to-arrange cards ─────────────────────────────────
+let dvdArrange=false;
+function getDvdOrder(){ try{return JSON.parse(localStorage.getItem('dvd_order_v1'))||[];}catch(e){return [];} }
+function saveDvdOrder(){
+  const order=[...document.querySelectorAll('#dvd-grid .dvm-card')].map(c=>c.dataset.metric);
+  localStorage.setItem('dvd_order_v1',JSON.stringify(order));
+  const _rb=document.getElementById('dvd-reset-btn'); if(_rb) _rb.style.display='inline-flex';
+}
+function toggleDvdArrange(){
+  dvdArrange=!dvdArrange;
+  const grid=document.getElementById('dvd-grid');
+  grid.classList.toggle('arrange-on',dvdArrange);
+  grid.querySelectorAll('.dvm-card').forEach(c=>c.draggable=dvdArrange);
+  const btn=document.getElementById('dvd-arrange-btn');
+  if(btn) btn.innerHTML = dvdArrange ? '✓ Done' : '⠿ Arrange';
+}
+function resetDvdOrder(){
+  localStorage.removeItem('dvd_order_v1');
+  const _rb=document.getElementById('dvd-reset-btn'); if(_rb) _rb.style.display='none';
+  if(typeof lastDates!=='undefined' && lastDates) renderDayVsDay(lastDates);
+  else if(allDates && allDates.length) renderDayVsDay(getFilteredDates());
+}
+// drag handlers (delegated on the grid — survive innerHTML re-renders)
+(function(){
+  const grid=document.getElementById('dvd-grid');
+  if(!grid) return;
+  let dragEl=null;
+  grid.addEventListener('dragstart',e=>{
+    const c=e.target.closest('.dvm-card');
+    if(!c||!dvdArrange){ e.preventDefault(); return; }
+    dragEl=c; c.classList.add('dragging'); e.dataTransfer.effectAllowed='move';
+    try{ e.dataTransfer.setData('text/plain',c.dataset.metric); }catch(_){}
+  });
+  grid.addEventListener('dragend',()=>{
+    if(!dragEl) return;
+    dragEl.classList.remove('dragging'); dragEl=null;
+    saveDvdOrder();
+  });
+  grid.addEventListener('dragover',e=>{
+    if(!dvdArrange||!dragEl) return;
+    e.preventDefault();
+    const c=e.target.closest('.dvm-card');
+    if(!c||c===dragEl) return;
+    const r=c.getBoundingClientRect();
+    const after=(e.clientY-r.top)>r.height/2 || (Math.abs(e.clientY-(r.top+r.height/2))<4 && (e.clientX-r.left)>r.width/2);
+    grid.insertBefore(dragEl, after?c.nextSibling:c);
+  });
+})();
 
 
 // ── G&A EXPENSES ─────────────────────────────────────────────────────────────
@@ -2192,28 +2253,50 @@ function renderGA(dates){
     {l:'Transportation & Vehicle Rental',k:'Total - Transportation and vehicle rental expenses',subs:[]},
     {l:'Rent',k:'Total - Rent',subs:[{l:'Office Rent',k:'Office Rent'},{l:'Store Rental',k:'Store Rental'}]},
   ];
+  // header: Category + one column per day + Total (sticky category column)
+  const dateThs = dates.map(d=>`<th style="text-align:right;white-space:nowrap;min-width:78px">${d}</th>`).join('');
+  document.getElementById('ga-thead').innerHTML =
+    `<tr><th style="width:34px;position:sticky;left:0;background:#FAFCF7;z-index:12"></th>`+
+    `<th style="position:sticky;left:34px;background:#FAFCF7;z-index:12;min-width:190px">Category</th>`+
+    dateThs+
+    `<th style="text-align:right;white-space:nowrap;min-width:90px;position:sticky;right:0;background:#FAFCF7;z-index:12">Total</th></tr>`;
+
   let grandTotal = 0;
-  const itemTotals = gaItems.map(item => {
-    const vals = getVals(item.k, dates).filter(v=>v!=null);
-    const total = sum(vals);
-    grandTotal += total;
-    return {total, dailyAvg: vals.length ? total/dates.length : 0};
-  });
-  document.getElementById('ga-total').textContent = 'Total: SAR ' + fmt(grandTotal, 0);
+  const grandDaily = dates.map(()=>0);
   let html = '';
   gaItems.forEach((item, idx) => {
-    const {total, dailyAvg} = itemTotals[idx];
-    const pct = grandTotal !== 0 ? Math.abs(total/grandTotal*100) : 0;
+    const r = getRow(item.k);
+    const vals = dates.map(d => r[d] ?? null);
+    const total = sum(vals.filter(v=>v!=null));
+    grandTotal += total;
+    vals.forEach((v,i)=>{ if(v!=null) grandDaily[i]+=v; });
     const rowId = 'ga-row-'+idx;
-    html += `<tr class="ga-main-row" onclick="toggleGA('${rowId}')"><td><button class="ga-toggle" id="btn-${rowId}">+</button></td><td style="font-weight:600;color:var(--text)">${item.l}</td><td style="color:var(--blue)">SAR ${fmt(dailyAvg,0)}</td><td style="color:var(--red)">SAR ${fmt(total,0)}</td><td style="color:var(--muted)">${fmt(pct,1)}%</td></tr>`;
+    const dayCells = vals.map(v=>`<td style="text-align:right;color:var(--text)">${v!=null?fmt(v,0):'—'}</td>`).join('');
+    html += `<tr class="ga-main-row" onclick="toggleGA('${rowId}')">`+
+      `<td style="position:sticky;left:0;background:#fff;z-index:6"><button class="ga-toggle" id="btn-${rowId}">+</button></td>`+
+      `<td style="font-weight:600;color:var(--text);position:sticky;left:34px;background:#fff;z-index:6">${item.l}</td>`+
+      dayCells+
+      `<td style="text-align:right;font-weight:700;color:var(--red);position:sticky;right:0;background:#fff;z-index:6">SAR ${fmt(total,0)}</td></tr>`;
     item.subs.forEach(sub => {
-      const sv = getVals(sub.k,dates).filter(v=>v!=null);
-      const st = sum(sv);
-      html += `<tr class="ga-sub-row" id="${rowId}"><td></td><td style="padding-left:28px!important;color:var(--muted)">↳ ${sub.l}</td><td style="color:var(--muted)">SAR ${fmt(sv.length?st/dates.length:0,0)}</td><td style="color:var(--muted)">SAR ${fmt(st,0)}</td><td>—</td></tr>`;
+      const sr = getRow(sub.k);
+      const sv = dates.map(d => sr[d] ?? null);
+      const st = sum(sv.filter(v=>v!=null));
+      const subCells = sv.map(v=>`<td style="text-align:right;color:var(--muted)">${v!=null?fmt(v,0):'—'}</td>`).join('');
+      html += `<tr class="ga-sub-row" id="${rowId}">`+
+        `<td style="position:sticky;left:0;background:#FAFBFC;z-index:6"></td>`+
+        `<td style="padding-left:24px!important;color:var(--muted);position:sticky;left:34px;background:#FAFBFC;z-index:6">↳ ${sub.l}</td>`+
+        subCells+
+        `<td style="text-align:right;color:var(--muted);position:sticky;right:0;background:#FAFBFC;z-index:6">SAR ${fmt(st,0)}</td></tr>`;
     });
   });
   document.getElementById('ga-tbody').innerHTML = html;
-  document.getElementById('ga-tfoot').innerHTML = `<tr><td></td><td style="font-weight:700">TOTAL G&A</td><td style="font-weight:700">SAR ${fmt(grandTotal/dates.length,0)}</td><td style="font-weight:700">SAR ${fmt(grandTotal,0)}</td><td style="font-weight:700">100%</td></tr>`;
+  document.getElementById('ga-total').textContent = 'Total: SAR ' + fmt(grandTotal, 0);
+  const footCells = grandDaily.map(v=>`<td style="text-align:right;font-weight:700">${fmt(v,0)}</td>`).join('');
+  document.getElementById('ga-tfoot').innerHTML =
+    `<tr><td style="position:sticky;left:0;background:#fff;z-index:6"></td>`+
+    `<td style="font-weight:700;position:sticky;left:34px;background:#fff;z-index:6">TOTAL G&A</td>`+
+    footCells+
+    `<td style="text-align:right;font-weight:700;position:sticky;right:0;background:#fff;z-index:6">SAR ${fmt(grandTotal,0)}</td></tr>`;
 }
 
 function toggleGA(rowId){
@@ -2268,24 +2351,35 @@ function renderEBITDA(dates){
   document.getElementById('ebitda-pct').style.color = pctColor;
 
   const rows = [
-    {l:'Total Co.Margin',    formula:'Othaim Margin + Madar Margin',                  total:totalCM,     avg:totalCM/dates.length},
-    {l:'Total G&A Expenses', formula:'Employment + Marketing + Services + Rent…', total:totalGA,     avg:totalGA/dates.length},
-    {l:'EBITDA',             formula:'Total Co.Margin − Total G&A Expenses',            total:totalEBITDA, avg:totalEBITDA/dates.length, bold:true},
-    {l:'Order Value Exc VAT',formula:'Base for % calculation',                   total:totalRev,    avg:totalRev/dates.length},
-    {l:'EBITDA %',           formula:'EBITDA ÷ Order Value Exc VAT × 100',        total:null,        avg:null, pct:ebitdaPct, bold:true},
+    {l:'Total Co.Margin',     daily:coMarginVals,                              isPct:false},
+    {l:'Total G&A Expenses',  daily:gaVals.map(v=>v==null?null:Math.abs(v)),   isPct:false},
+    {l:'EBITDA',              daily:ebitdaDailyVals,                           isPct:false, bold:true},
+    {l:'Order Value Exc VAT', daily:revVals,                                   isPct:false},
+    {l:'EBITDA %',            daily:dates.map((_,i)=>{const e=ebitdaDailyVals[i],rv=revVals[i];return (e!=null&&rv)?e/rv*100:null;}), isPct:true, bold:true},
   ];
 
+  // header: Component + one column per day + Total (sticky component column)
+  const dateThs = dates.map(d=>`<th style="text-align:right;white-space:nowrap;min-width:80px">${d}</th>`).join('');
+  document.getElementById('ebitda-thead').innerHTML =
+    `<tr><th style="position:sticky;left:0;background:#FAFCF7;z-index:12;min-width:170px">Component</th>`+
+    dateThs+
+    `<th style="text-align:right;white-space:nowrap;min-width:100px;position:sticky;right:0;background:#FAFCF7;z-index:12">Total</th></tr>`;
+
   document.getElementById('ebitda-tbody').innerHTML = rows.map(r => {
-    const col = r.bold ? (r.total!=null ? (r.total>=0?'#00c48c':'#ff5252') : (r.pct>=0?'#00c48c':'#ff5252')) : 'var(--text)';
-    const totalDisplay = r.pct!=null ? `<span style="color:${pctColor};font-weight:700">${fmt(r.pct,2)}%</span>` :
-                         r.total!=null ? `SAR ${fmt(r.total,0)}` : '—';
-    const avgDisplay   = r.pct!=null ? '—' : r.avg!=null ? `SAR ${fmt(r.avg,0)}` : '—';
-    return `<tr style="${r.bold?'border-top:1px solid var(--border);':''}">
-      <td style="font-weight:${r.bold?700:400};color:${col}">${r.l}</td>
-      <td style="color:var(--muted);font-size:11px">${r.formula}</td>
-      <td style="color:${r.bold?col:'#5b9cf6'}">${avgDisplay}</td>
-      <td style="color:${r.bold?col:'var(--text)'};font-weight:${r.bold?700:400}">${totalDisplay}</td>
-    </tr>`;
+    const cells = r.daily.map(v=>{
+      if(v==null) return `<td style="text-align:right;color:var(--muted)">—</td>`;
+      const neg=v<0;
+      const txt = r.isPct ? fmt(v,1)+'%' : fmt(v,0);
+      const c = neg ? '#E53E3E' : (r.bold ? 'var(--text)' : 'var(--text-secondary)');
+      return `<td style="text-align:right;color:${c};font-weight:${r.bold?700:400}">${txt}</td>`;
+    }).join('');
+    const totVal = r.isPct ? ebitdaPct : sum(r.daily.filter(v=>v!=null));
+    const totTxt = r.isPct ? fmt(totVal,2)+'%' : 'SAR '+fmt(totVal,0);
+    const totC = totVal<0 ? '#E53E3E' : (r.bold ? (totVal>=0?'#3E6A00':'#E53E3E') : 'var(--text)');
+    return `<tr style="${r.bold?'border-top:1px solid var(--border);':''}">`+
+      `<td style="font-weight:${r.bold?700:600};color:${r.bold?totC:'var(--text)'};position:sticky;left:0;background:#fff;z-index:6">${r.l}</td>`+
+      cells+
+      `<td style="text-align:right;font-weight:700;color:${totC};position:sticky;right:0;background:#fff;z-index:6">${totTxt}</td></tr>`;
   }).join('');
 }
 
@@ -2747,6 +2841,7 @@ function tabAddUser(){
     if(!card) return;
     // ignore while editing / on edit controls
     if(card.closest('.kpi-grid.edit-active')) return;
+    if(card.closest('#dvd-grid.arrange-on')) return;          // ignore while arranging cards
     if(e.target.closest('.card-delete-btn,.card-drag-handle')) return;
     ripple(card,e);
     openMetric(card);
